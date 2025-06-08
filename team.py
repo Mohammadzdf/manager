@@ -5,7 +5,7 @@ import asyncio
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
-
+from flask import Flask
 TOKEN = "7652160937:AAFK7t-RKbl84Ip2JkAv7mfG_e3jl6AH9Gg"
 REPORT_CHANNEL_ID = -1002834651178
 IDEA_CHANNEL_ID = -1002899179280
@@ -13,6 +13,15 @@ IDEA_CHANNEL_ID = -1002899179280
 user_state = {}
 logging.basicConfig(level=logging.INFO)
 
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "OK"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000)
+    
 # سرور ساده برای زنده نگه‌داشتن سرویس در Render
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):

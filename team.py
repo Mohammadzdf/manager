@@ -2,10 +2,9 @@ import datetime
 import logging
 import threading
 import asyncio
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
-from flask import Flask
 
 TOKEN = "7652160937:AAFK7t-RKbl84Ip2JkAv7mfG_e3jl6AH9Gg"
 REPORT_CHANNEL_ID = -1002834651178
@@ -21,18 +20,8 @@ app = Flask(__name__)
 def home():
     return "OK"
 
-# --- HTTP Server ساده (اختیاری) ---
-class SimpleHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot is running!")
-
 def run_web_server():
-    port = 8000
-    server = HTTPServer(('0.0.0.0', port), SimpleHandler)
-    logging.info(f"Server is running on port {port}")
-    server.serve_forever()
+    app.run(host="0.0.0.0", port=8000)
 
 # --- دستورات ربات ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -97,6 +86,12 @@ async def run_bot():
     await app_telegram.run_polling()
 
 # --- اجرای همه چیز ---
+def main():
+    # اجرای سرور وب در Thread جدا
+    threading.Thread(target=run_web_server, daemon=True).start()
+    # اجرای ربات (asyncio event loop)
+    asyncio.run(run_bot())
+
 if __name__ == "__main__":
-    threading.Thread(target=run_web_server).start()  # اجرای سرور در ترد جداگانه
-    asyncio.run(run_bot())  # اجرای ربات در ترد اصلی با async
+    main()
+    

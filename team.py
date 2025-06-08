@@ -1,23 +1,37 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
 import datetime
+import logging
+import threading
+import asyncio
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 
-
-# === مشخصات کلیدی ===
 TOKEN = "7652160937:AAFK7t-RKbl84Ip2JkAv7mfG_e3jl6AH9Gg"
 REPORT_CHANNEL_ID = -1002834651178
 IDEA_CHANNEL_ID = -1002899179280
 
-# === حافظه موقتی برای تشخیص وضعیت کاربر ===
 user_state = {}
+logging.basicConfig(level=logging.INFO)
+
+# سرور ساده برای زنده نگه‌داشتن سرویس در Render
+class SimpleHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running!")
+
+def run_web_server():
+    port = 8000
+    server = HTTPServer(('0.0.0.0', port), SimpleHandler)
+    logging.info(f"Server is running on port {port}")
+    server.serve_forever()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("📋 ارسال گزارش روزانه", callback_data='report')],
         [InlineKeyboardButton("💡 ارسال ایده / پیشنهاد", callback_data='idea')],
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("چه کاری می‌خوای انجام بدی؟", reply_markup=reply_markup)
+    await update.message.reply_text("چه کاری می‌خوای انجام بدی؟", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -65,10 +79,14 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("برای شروع /start رو بزن یا از دکمه‌ها استفاده کن.")
 
-if __name__ == '__main__':
+def run_bot():
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(handle_buttons))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-    print("ربات با موفقیت اجرا شد.")
     app.run_polling()
+
+if __name__ == "__main__":
+    threading.Thread(target=run_web_server).start()
+    run_bot()
+    

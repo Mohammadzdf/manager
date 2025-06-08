@@ -75,16 +75,20 @@ app = Flask(__name__)
 def home():
     return '✅ ربات فعال است.'
 
+@app.route('/ping')
+def ping():
+    return 'pong', 200
+
 def run_flask():
     app.run(host='0.0.0.0', port=8080)
 
 # ==== اجرای ربات ====
 def run_bot():
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(handle_buttons))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-    app.run_polling()
+    application = ApplicationBuilder().token(TOKEN).build()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(handle_buttons))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+    application.run_polling()
 
 # ==== نقطه شروع ====
 if __name__ == "__main__":

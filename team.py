@@ -1,10 +1,11 @@
 import datetime
 import logging
-import threading
 import asyncio
 from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
+
+import uvicorn  # باید در requirements.txt اضافه شود
 
 TOKEN = "7652160937:AAFK7t-RKbl84Ip2JkAv7mfG_e3jl6AH9Gg"
 REPORT_CHANNEL_ID = -1002834651178
@@ -19,8 +20,10 @@ app = Flask(__name__)
 def home():
     return "OK"
 
-def run_web_server():
-    app.run(host="0.0.0.0", port=8000, debug=False, use_reloader=False)
+async def run_web_server_async():
+    config = uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="info")
+    server = uvicorn.Server(config)
+    await server.serve()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -88,14 +91,11 @@ async def run_bot():
     app_telegram.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     await app_telegram.run_polling()
 
-def main():
-    threading.Thread(target=run_web_server, daemon=True).start()
-
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(run_bot())
-    loop.run_forever()
+async def main():
+    web_task = asyncio.create_task(run_web_server_async())
+    bot_task = asyncio.create_task(run_bot())
+    await asyncio.gather(web_task, bot_task)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
     

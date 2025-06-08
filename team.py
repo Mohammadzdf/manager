@@ -1,8 +1,12 @@
 import datetime
 import logging
+from flask import Flask
+from threading import Thread
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 
+# ==== پیکربندی‌ها ====
 TOKEN = "7652160937:AAFK7t-RKbl84Ip2JkAv7mfG_e3jl6AH9Gg"
 REPORT_CHANNEL_ID = -1002834651178
 IDEA_CHANNEL_ID = -1002899179280
@@ -10,6 +14,7 @@ IDEA_CHANNEL_ID = -1002899179280
 user_state = {}
 logging.basicConfig(level=logging.INFO)
 
+# ==== تعریف ربات ====
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("📋 ارسال گزارش روزانه", callback_data='report')],
@@ -63,13 +68,26 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("برای شروع /start رو بزن یا از دکمه‌ها استفاده کن.")
 
-def main():
+# ==== Flask برای زنده نگه‌داشتن سرویس ====
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return '✅ ربات فعال است.'
+
+def run_flask():
+    app.run(host='0.0.0.0', port=8080)
+
+# ==== اجرای ربات ====
+def run_bot():
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(handle_buttons))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.run_polling()
 
+# ==== نقطه شروع ====
 if __name__ == "__main__":
-    main()
+    Thread(target=run_flask).start()
+    run_bot()
     
